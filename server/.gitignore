@@ -1,0 +1,20 @@
+# ignore all node_modules files
+node_modules/*
+coverage
+
+# ingore lock files because we are creating a standalone application. See here for more explanation: https://stackoverflow.com/questions/39990017/should-i-commit-the-yarn-lock-file-and-what-is-it-for
+yarn.lock
+yarn-error.log
+package-lock.json
+
+# Mac files
+*.DS_Store
+
+# dotenv files
+.env
+
+# serverside test coverage files
+server/coverage/*
+
+# MongoMemorySaver (local database in memory): https://github.com/nodkz/mongodb-memory-server#available-options related env files
+globalConfig.json

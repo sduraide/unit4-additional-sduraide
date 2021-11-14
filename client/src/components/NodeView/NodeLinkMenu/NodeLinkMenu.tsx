@@ -1,0 +1,107 @@
+import React, { useEffect, useState } from 'react'
+import { IAnchor, ILink, INode, NodeIdsToNodesMap } from '../../../types'
+import { AnchorItem, LinkItem } from './AnchorItem'
+import './NodeLinkMenu.scss'
+import { includesAnchorId, loadAnchorToLinksMap } from './nodeLinkMenuUtils'
+
+export interface INodeLinkMenuProps {
+  currentNode: INode
+  nodeIdsToNodesMap: NodeIdsToNodesMap
+  refresh: boolean
+  selectedAnchors: IAnchor[]
+  setRefresh: (refresh: boolean) => void
+  setSelectedAnchors: (anchor: IAnchor[]) => void
+  setSelectedNode: (node: INode | null) => void
+  setAlertIsOpen: (open: boolean) => void
+  setAlertMessage: (message: string) => void
+  setAlertTitle: (title: string) => void
+}
+
+export const NodeLinkMenu = (props: INodeLinkMenuProps) => {
+  const {
+    currentNode,
+    selectedAnchors,
+    setSelectedAnchors,
+    setRefresh,
+    refresh,
+    setSelectedNode,
+    nodeIdsToNodesMap,
+    setAlertIsOpen,
+    setAlertMessage,
+    setAlertTitle,
+  } = props
+  const [anchorsMap, setAnchorsMap] = useState<{
+    [anchorId: string]: {
+      anchor: IAnchor
+      links: { link: ILink; oppNode: INode; oppAnchor: IAnchor }[]
+    }
+  }>({})
+
+  useEffect(() => {
+    const fetchLinks = async () => {
+      setAnchorsMap(await loadAnchorToLinksMap({ ...props }))
+    }
+    fetchLinks()
+  }, [currentNode, refresh, selectedAnchors])
+
+  const loadMenu = () => {
+    const anchorItems: JSX.Element[] = []
+
+    if (anchorsMap) {
+      for (const anchorId in anchorsMap) {
+        if (Object.prototype.hasOwnProperty.call(anchorsMap, anchorId)) {
+          const isAnchorSelected: boolean = includesAnchorId(anchorId, selectedAnchors)
+          const extent = anchorsMap[anchorId].anchor.extent
+          const anchorLinks = anchorsMap[anchorId].links
+          const linkItems: JSX.Element[] = []
+          for (let i = 0; i < anchorLinks.length; i++) {
+            const anchorLink: {
+              link: ILink
+              oppNode: INode
+              oppAnchor: IAnchor
+            } = anchorLinks[i]
+
+            linkItems.push(
+              <LinkItem
+                key={anchorLink.link.linkId}
+                link={anchorLink.link}
+                currentNode={currentNode}
+                anchorLink={anchorLink}
+                nodeIdsToNodesMap={nodeIdsToNodesMap}
+                refresh={refresh}
+                setRefresh={setRefresh}
+                selectedAnchors={selectedAnchors}
+                setSelectedAnchors={setSelectedAnchors}
+                setSelectedNode={setSelectedNode}
+                setAlertIsOpen={setAlertIsOpen}
+                setAlertMessage={setAlertMessage}
+                setAlertTitle={setAlertTitle}
+              />
+            )
+          }
+          anchorItems.push(
+            <AnchorItem
+              currentNode={currentNode}
+              linkItems={linkItems}
+              anchorsMap={anchorsMap}
+              key={anchorId}
+              anchorId={anchorId}
+              extent={extent}
+              isAnchorSelected={isAnchorSelected}
+              setSelectedAnchors={setSelectedAnchors}
+              refresh={refresh}
+              setRefresh={setRefresh}
+              setAlertIsOpen={setAlertIsOpen}
+              setAlertMessage={setAlertMessage}
+              setAlertTitle={setAlertTitle}
+            />
+          )
+        }
+      }
+    }
+
+    return anchorItems
+  }
+
+  return <div className="linkMenu">{loadMenu()}</div>
+}
